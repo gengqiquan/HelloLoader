@@ -2,7 +2,6 @@ package com.sunshine.view.library;
 
 import android.content.Context;
 import android.os.Build;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -29,9 +28,9 @@ public class LoaderBuilder {
         return this;
     }
 
-    public void LoadUrl(final String url) {
+    public void load(final String uri) {
         checkDefault();
-        mLoader.putTask(mContext, mLoaderConfigure, mImageView, url);
+        mLoader.putTask(mContext, mLoaderConfigure, mImageView, uri);
         //从界面移除后取消加载请求
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
             mImageView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
@@ -41,7 +40,6 @@ public class LoaderBuilder {
 
                 @Override
                 public void onViewDetachedFromWindow(View v) {
-                    Log.d("Detached", v.getTag().toString() + "##" + v.getId());
                     mLoader.removeTask(mImageView);
                 }
             });

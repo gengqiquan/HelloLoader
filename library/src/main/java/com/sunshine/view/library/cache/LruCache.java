@@ -252,7 +252,7 @@ public class LruCache implements Cache {
      * <p>An entry's size must not change while it is in the cache.
      */
     protected int sizeOf(String key, Bitmap value) {
-        return 1;
+        return value.getRowBytes() * value.getHeight();
     }
 
     /**

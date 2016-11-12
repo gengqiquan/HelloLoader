@@ -47,6 +47,7 @@ public class HelloLoader {
     public enum Type {
         FIFO, LIFO;
     }
+
     //主线程设置图片句柄
     @SuppressLint("HandlerLeak")
     private Handler UIHandler = new Handler() {
@@ -74,6 +75,7 @@ public class HelloLoader {
         }
 
     };
+
     public HelloLoader(Context mAppliactionContext, Cache cache, String mDiskCachePath, LoaderConfigure mDefaultConfigure
             , Downloader downloader) {
         this.mAppliactionContext = mAppliactionContext;
@@ -156,7 +158,6 @@ public class HelloLoader {
     }
 
 
-
     protected void removeTask(ImageView imageView) {
         synchronized (mTaskQueue) {
             mTaskQueue.remove(new TaskInfo(imageView, null));
@@ -170,11 +171,14 @@ public class HelloLoader {
      * @date 2016/11/3 9:45
      */
     @NonNull
-    public void putTask(final Context context, final LoaderConfigure configure, final ImageView imageView, final String url) {
-        final String tag = Utils.md5(url);
+    public void putTask(final Context context, final LoaderConfigure configure, final ImageView imageView, final String uri) {
+        //加时间戳，防止列表加载的时候有相同路径的多张图片重复加载错乱问题
+        final String key = Utils.md5(uri);
+        final String tag = key+ System.currentTimeMillis();
         Bitmap bm = null;
-        bm = memoryCacheCheck(tag);
+        bm = memoryCacheCheck(key);
         if (bm != null) {
+            imageView.setTag(tag);
             ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure);
             Message msg = new Message();
             msg.what = 0;
@@ -185,28 +189,12 @@ public class HelloLoader {
                 removeTask(imageView);//顺序不能错，先从任务队列移除这个imageView之前所绑定的任务
             }
             imageView.setTag(tag);
-            Runnable runnable = new Runnable() {
-
-                @Override
-                public void run() {
-                    // TODO: 这里其实应该加入优先级。本地如果有这个文件，应该优先级高一点，或者额外给个本地解析任务队列
-                    Bitmap bm = getBitmapFromDiskCache(context, tag, imageView);
-                    if (bm == null) {
-                        ResponseInfo responseInfo = mInstance.mDownloader.downloadImgByUrl(url);
-                        if (responseInfo.success)// 如果下载成功
-                        {
-                            bm = dealResponse(configure, imageView, tag, responseInfo.bitmap);
-                        }
-                    }
-                    ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure);
-                    Message msg = new Message();
-                    msg.what = 0;
-                    msg.obj = imageInfo;
-                    UIHandler.sendMessage(msg);
-                }
-
-
-            };
+            Runnable runnable;
+            if (uri.startsWith("http")) {
+                runnable = getNetImageRunnable(context, configure, imageView, uri, tag,key);
+            } else {
+                runnable = getLocalImageRunnable(context, configure, imageView, uri, tag,key);
+            }
             TaskInfo info = new TaskInfo(imageView, runnable);
             synchronized (mTaskQueue) {
                 if (mTaskQueue.contains(info)) {
@@ -219,19 +207,80 @@ public class HelloLoader {
         }
     }
 
+    @NonNull
+    public Runnable getNetImageRunnable(final Context context, final LoaderConfigure configure, final ImageView imageView, final String url, final String tag, final String key) {
+        return new Runnable() {
+
+            @Override
+            public void run() {
+                // TODO: 这里其实应该加入优先级。本地如果有这个文件，应该优先级高一点，或者额外给个本地解析任务队列
+                Bitmap bm = getBitmapFromDiskCache(context, key, imageView);
+                if (bm == null) {
+                    ResponseInfo responseInfo = mInstance.mDownloader.downloadImgByUrl(url);
+                    if (responseInfo.success)// 如果下载成功
+                    {
+                        bm = dealImage(configure, imageView, key, responseInfo.bitmap);
+                    }
+                }
+                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure);
+                Message msg = new Message();
+                msg.what = 0;
+                msg.obj = imageInfo;
+                UIHandler.sendMessage(msg);
+            }
+
+
+        };
+    }
+
+    @NonNull
+    public Runnable getLocalImageRunnable(final Context context, final LoaderConfigure configure, final ImageView imageView, final String path, final String tag, final String key) {
+        return new Runnable() {
+
+            @Override
+            public void run() {
+                Bitmap bm = getBitmapFromDiskCache(context, key, imageView);
+                if (bm == null) {
+                    bm = getBitmapFromDisk(context, path, imageView);
+                    if (bm!= null) {
+                        bm = dealImage(configure, imageView, key, bm);
+                    }
+                }
+                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure);
+                Message msg = new Message();
+                msg.what = 0;
+                msg.obj = imageInfo;
+                UIHandler.sendMessage(msg);
+            }
+
+
+        };
+    }
+
     private Bitmap getBitmapFromDiskCache(Context mContext, String key, ImageView imageView) {
         Bitmap bm = null;
         File file = Utils.getDiskCacheDir(mInstance.mDiskCachePath, key);
         if (file.exists())// 如果在本地缓存文件中发现
         {
             ImageSizeUtil.ImageSize imageSize = ImageSizeUtil.getImageViewSize(imageView);
-            // 2、压缩图片
+            // 根据控件大小获取本地压缩处理后的图片
             bm = ImageUtil.decodeSampledBitmapFromPath(file.getAbsolutePath(), imageSize);
         }
         return bm;
     }
 
-    private Bitmap dealResponse(LoaderConfigure configure, ImageView imageView, String key, Bitmap bm) {
+    private Bitmap getBitmapFromDisk(Context mContext, String path, ImageView imageView) {
+        Bitmap bm = null;
+        if (!Utils.checkNULL(path))// 如果文件路径不为空
+        {
+            ImageSizeUtil.ImageSize imageSize = ImageSizeUtil.getImageViewSize(imageView);
+            // 根据控件大小获取本地压缩处理后的图片
+            bm = ImageUtil.decodeSampledBitmapFromPath(path, imageSize);
+        }
+        return bm;
+    }
+
+    private Bitmap dealImage(LoaderConfigure configure, ImageView imageView, String key, Bitmap bm) {
         if (configure.cacheBaseImage || !configure.adjust) {//缓存原图,或者不压缩的情况下
             putIntoCache(configure, key, bm);
         }

@@ -81,6 +81,10 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         }).start();
+//        for (int i = 0; i < 50; i++) {
+//            list.add("/storage/emulated/0/Tencent/QQ_Images/a.jpg");
+//        }
+//        adapter.notifyDataSetChanged();
     }
 
     private String doRequest(String urlStr) {
@@ -142,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 holder = (ViewHolder) convertView.getTag();
             }
-            loader.bind(holder.imageView).LoadUrl(list.get(position));
+            loader.bind(holder.imageView).load(list.get(position));
             return convertView;
         }
 

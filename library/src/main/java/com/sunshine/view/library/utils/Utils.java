@@ -102,14 +102,14 @@ public class Utils {
         if (largeHeap && SDK_INT >= HONEYCOMB) {
             memoryClass = ActivityManagerHoneycomb.getLargeMemoryClass(am);
         }
-        if(memoryClass>70){
-            memoryClass=10;
-        }
-        else {
-            memoryClass=memoryClass/7;
-        }
+//        if(memoryClass>70){
+//            memoryClass=10;
+//        }
+//        else {
+//            memoryClass=memoryClass/7;
+//        }
         // Target ~15% of the available heap.
-        return 1024 * 1024 * memoryClass;
+        return 1024 * 1024 * memoryClass/7;
     }
 
     @TargetApi(HONEYCOMB)
