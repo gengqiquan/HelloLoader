@@ -13,8 +13,11 @@ import android.widget.ImageView;
 import com.sunshine.view.library.cache.Cache;
 import com.sunshine.view.library.cache.LruCache;
 import com.sunshine.view.library.data.ImageInfo;
+import com.sunshine.view.library.data.LoadedFrom;
 import com.sunshine.view.library.data.ResponseInfo;
 import com.sunshine.view.library.data.TaskInfo;
+import com.sunshine.view.library.dispalyer.SimpleImageDisplayer;
+import com.sunshine.view.library.dispalyer.Displayer;
 import com.sunshine.view.library.download.Downloader;
 import com.sunshine.view.library.download.HttpUrlConnectionDownLoader;
 import com.sunshine.view.library.utils.ImageSizeUtil;
@@ -36,7 +39,7 @@ public class HelloLoader {
     Cache cache;
     String mDiskCachePath;
     LoaderConfigure mDefaultConfigure;//默认的全局图片加载配置
-    Downloader mDownloader;//图片加载器
+    Downloader mDownloader;//图片下载器
     LinkedList<TaskInfo> mTaskQueue;//解析请求队列
     ExecutorService mThreadPool;// 线程池
     int threadCount = 4;
@@ -67,7 +70,7 @@ public class HelloLoader {
                         }
                         if (bm != null) {
                             bm = ImageUtil.configureImage(bm, imageView, configure);
-                            imageView.setImageBitmap(bm);
+                            configure.getDisplayer().display(bm, imageInfo);
                         }
                     }
                     break;
@@ -77,12 +80,13 @@ public class HelloLoader {
     };
 
     public HelloLoader(Context mAppliactionContext, Cache cache, String mDiskCachePath, LoaderConfigure mDefaultConfigure
-            , Downloader downloader) {
+            , Downloader downloader, Displayer displayer) {
         this.mAppliactionContext = mAppliactionContext;
         this.cache = cache;
         this.mDiskCachePath = mDiskCachePath;
         this.mDefaultConfigure = mDefaultConfigure;
         this.mDownloader = downloader;
+        this.mDefaultConfigure.setDisplayer(displayer);
         mTaskQueue = new LinkedList<>();
         threadCount = Runtime.getRuntime().availableProcessors();
         mThreadPool = Executors.newFixedThreadPool(threadCount + 1);
@@ -174,12 +178,12 @@ public class HelloLoader {
     public void putTask(final Context context, final LoaderConfigure configure, final ImageView imageView, final String uri) {
         //加时间戳，防止列表加载的时候有相同路径的多张图片重复加载错乱问题
         final String key = Utils.md5(uri);
-        final String tag = key+ System.currentTimeMillis();
+        final String tag = key + System.currentTimeMillis();
         Bitmap bm = null;
         bm = memoryCacheCheck(key);
         if (bm != null) {
             imageView.setTag(tag);
-            ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure);
+            ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, LoadedFrom.MEMORY_CACHE);
             Message msg = new Message();
             msg.what = 0;
             msg.obj = imageInfo;
@@ -191,9 +195,9 @@ public class HelloLoader {
             imageView.setTag(tag);
             Runnable runnable;
             if (uri.startsWith("http")) {
-                runnable = getNetImageRunnable(context, configure, imageView, uri, tag,key);
+                runnable = getNetImageRunnable(context, configure, imageView, uri, tag, key);
             } else {
-                runnable = getLocalImageRunnable(context, configure, imageView, uri, tag,key);
+                runnable = getLocalImageRunnable(context, configure, imageView, uri, tag, key);
             }
             TaskInfo info = new TaskInfo(imageView, runnable);
             synchronized (mTaskQueue) {
@@ -215,14 +219,16 @@ public class HelloLoader {
             public void run() {
                 // TODO: 这里其实应该加入优先级。本地如果有这个文件，应该优先级高一点，或者额外给个本地解析任务队列
                 Bitmap bm = getBitmapFromDiskCache(context, key, imageView);
+                LoadedFrom from = LoadedFrom.DISC_CACHE;
                 if (bm == null) {
                     ResponseInfo responseInfo = mInstance.mDownloader.downloadImgByUrl(url);
                     if (responseInfo.success)// 如果下载成功
                     {
                         bm = dealImage(configure, imageView, key, responseInfo.bitmap);
+                        from = LoadedFrom.NETWORK;
                     }
                 }
-                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure);
+                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, from);
                 Message msg = new Message();
                 msg.what = 0;
                 msg.obj = imageInfo;
@@ -240,13 +246,15 @@ public class HelloLoader {
             @Override
             public void run() {
                 Bitmap bm = getBitmapFromDiskCache(context, key, imageView);
+                LoadedFrom from = LoadedFrom.DISC_CACHE;
                 if (bm == null) {
                     bm = getBitmapFromDisk(context, path, imageView);
-                    if (bm!= null) {
+                    if (bm != null) {
                         bm = dealImage(configure, imageView, key, bm);
+                        from = LoadedFrom.DISC;
                     }
                 }
-                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure);
+                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, from);
                 Message msg = new Message();
                 msg.what = 0;
                 msg.obj = imageInfo;
@@ -308,52 +316,66 @@ public class HelloLoader {
         Cache mCache;
         String mDiskCachePath;
         Downloader mDownloader;
+        Displayer mDisplayer;
 
         public Builder(Context context) {
             try {//防止传入的是activity的上下文
                 Activity activity = (Activity) context;
-                mContext = context.getApplicationContext();
+                this.mContext = context.getApplicationContext();
             } catch (Exception e) {
                 e.printStackTrace();
-                mContext = context;
+                this.mContext = context;
             }
         }
 
         public Builder defaultLoaderConfigure(LoaderConfigure loaderConfigure) {
-            mDefaultConfigure = loaderConfigure;
+            this.mDefaultConfigure = loaderConfigure;
             return this;
         }
 
         public Builder downloader(Downloader downloader) {
-            mDownloader = downloader;
+            this.mDownloader = downloader;
+            return this;
+        }
+
+        public Builder displayer(Displayer displayer) {
+            this.mDisplayer = displayer;
             return this;
         }
 
         public Builder cache(Cache cache) {
-            mCache = cache;
+            this.mCache = cache;
             return this;
         }
 
         public Builder diskCachePath(String loaderConfigure) {
-            mDiskCachePath = loaderConfigure;
+            this.mDiskCachePath = loaderConfigure;
             return this;
         }
 
         public HelloLoader build() {
-            if (mDefaultConfigure == null) {
-                mDefaultConfigure = new LoaderConfigure();
+            if (this.mDefaultConfigure == null) {
+                this.mDefaultConfigure = new LoaderConfigure();
             }
-            if (mCache == null) {
-                mCache = createDefaultCache();
+            if (this.mCache == null) {
+                this.mCache = createDefaultCache();
             }
-            if (Utils.checkNULL(mDiskCachePath)) {
-                mDiskCachePath = mContext.getCacheDir().getPath();
+            if (Utils.checkNULL(this.mDiskCachePath)) {
+                this.mDiskCachePath = this.mContext.getCacheDir().getPath();
             }
-            if (mDownloader == null) {
-                mDownloader = createDefaultDownloader();
+            if (this.mDownloader == null) {
+                this.mDownloader = createDefaultDownloader();
             }
-            mInstance = new HelloLoader(mContext, mCache, mDiskCachePath, mDefaultConfigure, mDownloader);
+            if (this.mDisplayer == null) {
+                this.mDisplayer = createDefaultDisplayer();
+            }
+            mInstance = new HelloLoader(this.mContext, this.mCache, this.mDiskCachePath, this.mDefaultConfigure, this.mDownloader, this.mDisplayer);
             return mInstance;
+        }
+
+        private Displayer createDefaultDisplayer() {
+            Displayer dispalyer = new SimpleImageDisplayer();
+            return dispalyer;
         }
 
         private Downloader createDefaultDownloader() {

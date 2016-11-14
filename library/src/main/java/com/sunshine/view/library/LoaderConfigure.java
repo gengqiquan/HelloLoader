@@ -1,5 +1,7 @@
 package com.sunshine.view.library;
 
+import com.sunshine.view.library.dispalyer.Displayer;
+
 /**
  * Created by Administrator on 2016/11/1.
  */
@@ -14,6 +16,15 @@ public class LoaderConfigure {
     public boolean diskCache = true;//是否需要本地缓存
     public boolean adjust = true;//是否需要按控件大小裁剪
     public boolean cacheBaseImage = false;//是否只缓存原图
+    private Displayer displayer;//图片加载器
+
+    public Displayer getDisplayer() {
+        return displayer;
+    }
+
+    public void setDisplayer(Displayer displayer) {
+        this.displayer = displayer;
+    }
 
     public LoaderConfigure cacheBaseImage(boolean cache) {
         cacheBaseImage = cache;

@@ -11,17 +11,27 @@ import com.sunshine.view.library.LoaderConfigure;
 
 public class ImageInfo {
     ImageView imageView;
+    LoadedFrom loadedFrom;
+    String tag;
+    Bitmap bitmap;
+    LoaderConfigure loaderConfigure;
 
-    public ImageInfo(ImageView imageView, String tag, Bitmap bitmap, LoaderConfigure loaderConfigure) {
+    public ImageInfo(ImageView imageView, String tag, Bitmap bitmap, LoaderConfigure loaderConfigure, LoadedFrom loadedFrom) {
         this.imageView = imageView;
         this.tag = tag;
         this.bitmap = bitmap;
         this.loaderConfigure = loaderConfigure;
+        this.loadedFrom = loadedFrom;
     }
 
-    String tag;
-    Bitmap bitmap;
-    LoaderConfigure loaderConfigure;
+
+    public LoadedFrom getLoadedFrom() {
+        return loadedFrom;
+    }
+
+    public void setLoadedFrom(LoadedFrom loadedFrom) {
+        this.loadedFrom = loadedFrom;
+    }
 
     public LoaderConfigure getLoaderConfigure() {
         return loaderConfigure;

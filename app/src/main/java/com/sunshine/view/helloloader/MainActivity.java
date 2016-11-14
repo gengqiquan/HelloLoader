@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import com.android.volley.toolbox.Volley;
 import com.sunshine.view.library.HelloLoader;
 import com.sunshine.view.library.LoaderConfigure;
+import com.sunshine.view.library.dispalyer.FadeInImageDisplayer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,9 +51,10 @@ public class MainActivity extends AppCompatActivity {
                 .loading(R.mipmap.ic_launcher).error(R.mipmap.ic_launcher);
         loader = new HelloLoader
                 .Builder(this)
-               .downloader(new VolleyDownLoader(Volley.newRequestQueue(this)))
+                .downloader(new VolleyDownLoader(Volley.newRequestQueue(this)))
 //                .downloader(new Okhttp3DownLoader(client))
                 .defaultLoaderConfigure(loaderConfigure)
+                .displayer(new FadeInImageDisplayer(1000))
                 .build();
         GridView listView = (GridView) findViewById(R.id.list);
         final myAdapter adapter = new myAdapter();

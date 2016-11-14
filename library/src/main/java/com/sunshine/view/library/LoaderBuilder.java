@@ -50,6 +50,10 @@ public class LoaderBuilder {
     private void checkDefault() {
         if (mLoaderConfigure == null) {
             mLoaderConfigure = mLoader.mDefaultConfigure;
+        } else {
+            if (mLoaderConfigure.getDisplayer() == null) {
+                mLoaderConfigure.setDisplayer(mLoader.mDefaultConfigure.getDisplayer());
+            }
         }
     }
 }
