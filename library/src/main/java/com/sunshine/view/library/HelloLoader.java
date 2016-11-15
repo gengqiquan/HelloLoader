@@ -16,8 +16,8 @@ import com.sunshine.view.library.data.ImageInfo;
 import com.sunshine.view.library.data.LoadedFrom;
 import com.sunshine.view.library.data.ResponseInfo;
 import com.sunshine.view.library.data.TaskInfo;
-import com.sunshine.view.library.dispalyer.SimpleImageDisplayer;
 import com.sunshine.view.library.dispalyer.Displayer;
+import com.sunshine.view.library.dispalyer.SimpleImageDisplayer;
 import com.sunshine.view.library.download.Downloader;
 import com.sunshine.view.library.download.HttpUrlConnectionDownLoader;
 import com.sunshine.view.library.utils.ImageSizeUtil;
@@ -34,7 +34,7 @@ import java.util.concurrent.Executors;
  */
 
 public class HelloLoader {
-    static volatile HelloLoader mInstance;
+    public static volatile HelloLoader mInstance;
     Context mAppliactionContext;
     Cache cache;
     String mDiskCachePath;
@@ -71,7 +71,11 @@ public class HelloLoader {
                         if (bm != null) {
                             bm = ImageUtil.configureImage(bm, imageView, configure);
                             configure.getDisplayer().display(bm, imageInfo);
+                            if (configure.getLoadListener() != null) {
+                                configure.getLoadListener().completed();
+                            }
                         }
+
                     }
                     break;
             }
@@ -86,7 +90,7 @@ public class HelloLoader {
         this.mDiskCachePath = mDiskCachePath;
         this.mDefaultConfigure = mDefaultConfigure;
         this.mDownloader = downloader;
-        this.mDefaultConfigure.setDisplayer(displayer);
+        this.mDefaultConfigure.displayer(displayer);
         mTaskQueue = new LinkedList<>();
         threadCount = Runtime.getRuntime().availableProcessors();
         mThreadPool = Executors.newFixedThreadPool(threadCount + 1);
@@ -97,7 +101,13 @@ public class HelloLoader {
         if (imageView == null)
             throw new NullPointerException("imageView can not be null");
         if (mInstance == null) {
-            mInstance = new Builder(imageView.getContext()).build();
+            synchronized (HelloLoader.class) {
+                if (mInstance == null) {
+                    mInstance = new HelloLoader
+                            .Builder(imageView.getContext())
+                            .build();
+                }
+            }
         }
         return new LoaderBuilder(imageView, mInstance);
     }
@@ -180,7 +190,9 @@ public class HelloLoader {
         final String key = Utils.md5(uri);
         final String tag = key + System.currentTimeMillis();
         Bitmap bm = null;
-        bm = memoryCacheCheck(key);
+        if (configure.memoryCache) {
+            bm = memoryCacheCheck(key);
+        }
         if (bm != null) {
             imageView.setTag(tag);
             ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, LoadedFrom.MEMORY_CACHE);
@@ -218,7 +230,10 @@ public class HelloLoader {
             @Override
             public void run() {
                 // TODO: 这里其实应该加入优先级。本地如果有这个文件，应该优先级高一点，或者额外给个本地解析任务队列
-                Bitmap bm = getBitmapFromDiskCache(context, key, imageView);
+                Bitmap bm = null;
+                if (configure.diskCache) {
+                    bm = getBitmapFromDiskCache(context, key, imageView);
+                }
                 LoadedFrom from = LoadedFrom.DISC_CACHE;
                 if (bm == null) {
                     ResponseInfo responseInfo = mInstance.mDownloader.downloadImgByUrl(url);
@@ -245,7 +260,10 @@ public class HelloLoader {
 
             @Override
             public void run() {
-                Bitmap bm = getBitmapFromDiskCache(context, key, imageView);
+                Bitmap bm = null;
+                if (configure.diskCache) {
+                    bm = getBitmapFromDiskCache(context, key, imageView);
+                }
                 LoadedFrom from = LoadedFrom.DISC_CACHE;
                 if (bm == null) {
                     bm = getBitmapFromDisk(context, path, imageView);
@@ -354,9 +372,6 @@ public class HelloLoader {
         }
 
         public HelloLoader build() {
-            if (this.mDefaultConfigure == null) {
-                this.mDefaultConfigure = new LoaderConfigure();
-            }
             if (this.mCache == null) {
                 this.mCache = createDefaultCache();
             }
@@ -368,6 +383,9 @@ public class HelloLoader {
             }
             if (this.mDisplayer == null) {
                 this.mDisplayer = createDefaultDisplayer();
+            }
+            if (this.mDefaultConfigure == null) {
+                this.mDefaultConfigure = new LoaderConfigure(mDisplayer);
             }
             mInstance = new HelloLoader(this.mContext, this.mCache, this.mDiskCachePath, this.mDefaultConfigure, this.mDownloader, this.mDisplayer);
             return mInstance;

@@ -1,5 +1,6 @@
 package com.sunshine.view.helloloader;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -26,7 +27,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -48,13 +48,14 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         loaderConfigure = new LoaderConfigure()
                 .memoryCache(true)
+                .diskCache(true)
                 .loading(R.mipmap.ic_launcher).error(R.mipmap.ic_launcher);
         loader = new HelloLoader
                 .Builder(this)
                 .downloader(new VolleyDownLoader(Volley.newRequestQueue(this)))
 //                .downloader(new Okhttp3DownLoader(client))
                 .defaultLoaderConfigure(loaderConfigure)
-                .displayer(new FadeInImageDisplayer(1000))
+               .displayer(new FadeInImageDisplayer(2000))
                 .build();
         GridView listView = (GridView) findViewById(R.id.list);
         final myAdapter adapter = new myAdapter();
@@ -135,11 +136,11 @@ public class MainActivity extends AppCompatActivity {
         return str;
     }
 
-    List<String> list = new ArrayList<>();
+    ArrayList<String> list = new ArrayList<>();
 
     class myAdapter extends BaseAdapter {
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(final int position, View convertView, ViewGroup parent) {
             ViewHolder holder;
             if (convertView == null) {
                 convertView = LayoutInflater.from(MainActivity.this).inflate(R.layout.list_item, null);
@@ -149,6 +150,16 @@ public class MainActivity extends AppCompatActivity {
                 holder = (ViewHolder) convertView.getTag();
             }
             loader.bind(holder.imageView).load(list.get(position));
+            holder.imageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(MainActivity.this, ImagePagerActivity.class);
+                    // 图片url,为了演示这里使用常量，一般从数据库中或网络中获取
+                    intent.putExtra(ImagePagerActivity.EXTRA_IMAGE_URLS, list);
+                    intent.putExtra(ImagePagerActivity.EXTRA_IMAGE_INDEX, position);
+                    startActivity(intent);
+                }
+            });
             return convertView;
         }
 

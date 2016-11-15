@@ -1,6 +1,7 @@
 package com.sunshine.view.library;
 
 import com.sunshine.view.library.dispalyer.Displayer;
+import com.sunshine.view.library.listener.LoadListener;
 
 /**
  * Created by Administrator on 2016/11/1.
@@ -16,14 +17,37 @@ public class LoaderConfigure {
     public boolean diskCache = true;//是否需要本地缓存
     public boolean adjust = true;//是否需要按控件大小裁剪
     public boolean cacheBaseImage = false;//是否只缓存原图
-    private Displayer displayer;//图片加载器
+    private Displayer mDisplayer;//图片加载器
+    LoadListener listener;
 
-    public Displayer getDisplayer() {
-        return displayer;
+    public LoaderConfigure(LoadListener listener) {
+        this.listener = listener;
     }
 
-    public void setDisplayer(Displayer displayer) {
-        this.displayer = displayer;
+    public LoaderConfigure() {
+    }
+
+    public LoaderConfigure(Displayer displayer) {
+        this.mDisplayer = displayer;
+    }
+
+
+    public LoadListener getLoadListener() {
+        return listener;
+    }
+
+    public LoaderConfigure setLoadListener(LoadListener listener) {
+        this.listener = listener;
+        return this;
+    }
+
+    public Displayer getDisplayer() {
+        return mDisplayer;
+    }
+
+    public LoaderConfigure displayer(Displayer displayer) {
+        this.mDisplayer = displayer;
+        return this;
     }
 
     public LoaderConfigure cacheBaseImage(boolean cache) {

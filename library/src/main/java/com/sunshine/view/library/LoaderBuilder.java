@@ -30,6 +30,9 @@ public class LoaderBuilder {
 
     public void load(final String uri) {
         checkDefault();
+        if (mLoaderConfigure.getLoadListener() != null) {
+            mLoaderConfigure.getLoadListener().started();
+        }
         mLoader.putTask(mContext, mLoaderConfigure, mImageView, uri);
         //从界面移除后取消加载请求
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
@@ -52,7 +55,7 @@ public class LoaderBuilder {
             mLoaderConfigure = mLoader.mDefaultConfigure;
         } else {
             if (mLoaderConfigure.getDisplayer() == null) {
-                mLoaderConfigure.setDisplayer(mLoader.mDefaultConfigure.getDisplayer());
+                mLoaderConfigure.displayer(mLoader.mDefaultConfigure.getDisplayer());
             }
         }
     }

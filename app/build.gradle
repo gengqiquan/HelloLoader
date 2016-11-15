@@ -27,6 +27,7 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:latest.release'
     compile 'com.squareup.okio:okio:latest.release'
     compile 'eu.the4thfloor.volley:com.android.volley:2015.05.28'
+    compile 'com.commit451:PhotoView:latest.release'
     compile 'com.android.support:appcompat-v7:24.2.1'
     testCompile 'junit:junit:4.12'
     compile project(':library')
