@@ -1234,12 +1234,15 @@ public class ImageUtil {
     }
 
     public static void pretreatmentImage(Context context, ImageView imageView, LoaderConfigure configure) {
+
         Bitmap bm = null;
         if (configure.loading > 0)
             bm = ReadBitmapById(context, configure.loading);
 
         if (bm != null) {
             imageView.setImageBitmap(configureImage(bm, imageView, configure));
+        }else{//防止从Viewholder中复用时本身已经加载了图片
+            imageView.setImageDrawable(new BitmapDrawable());
         }
     }
 }

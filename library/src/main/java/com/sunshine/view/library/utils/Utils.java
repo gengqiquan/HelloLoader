@@ -22,7 +22,7 @@ import static android.os.Build.VERSION_CODES.HONEYCOMB;
 
 public class Utils {
     /**
-     * 获得缓存图片的地址
+     * 获得缓存图片的文件
      *
      * @param path
      * @param uniqueName
@@ -31,7 +31,16 @@ public class Utils {
     public static File getDiskCacheDir(String path, String uniqueName) {
         return new File(path + File.separator + uniqueName);
     }
-
+    /**
+     * 获得缓存图片的地址
+     *
+     * @param path
+     * @param uniqueName
+     * @return
+     */
+    public static String getDiskCachePath(String path, String uniqueName) {
+        return  path + File.separator + uniqueName;
+    }
     /**
      * 写入文件
      * @author Administrator

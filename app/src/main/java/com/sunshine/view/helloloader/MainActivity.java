@@ -49,13 +49,15 @@ public class MainActivity extends AppCompatActivity {
         loaderConfigure = new LoaderConfigure()
                 .memoryCache(true)
                 .diskCache(true)
-                .loading(R.mipmap.ic_launcher).error(R.mipmap.ic_launcher);
+              //  .loading(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher);
         loader = new HelloLoader
                 .Builder(this)
                 .downloader(new VolleyDownLoader(Volley.newRequestQueue(this)))
 //                .downloader(new Okhttp3DownLoader(client))
                 .defaultLoaderConfigure(loaderConfigure)
-               .displayer(new FadeInImageDisplayer(2000))
+                .displayer(new FadeInImageDisplayer(500))
+                .allowDiskThreadPool(true)
                 .build();
         GridView listView = (GridView) findViewById(R.id.list);
         final myAdapter adapter = new myAdapter();
@@ -63,14 +65,14 @@ public class MainActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final String str = doRequest("http://www.tngou.net/tnfs/api/list?rows=50&page=7");
+                final String str = doRequest("http://www.tngou.net/tnfs/api/list?id=7&rows=50&page=2");
                 if (str != null) {
                     try {
                         JSONObject obj = new JSONObject(str);
                         JSONArray array = obj.getJSONArray("tngou");
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject object = array.getJSONObject(i);
-                            list.add("http://tnfs.tngou.net/image" + object.getString("img") + "_300x300");
+                            list.add("http://tnfs.tngou.net/image" + object.getString("img"));
                         }
                     } catch (JSONException e) {
 
@@ -149,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 holder = (ViewHolder) convertView.getTag();
             }
-            loader.bind(holder.imageView).load(list.get(position));
+            loader.bind(holder.imageView).load(list.get(position) + "_" + holder.imageView.getWidth() + "x" + holder.imageView.getHeight());
             holder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

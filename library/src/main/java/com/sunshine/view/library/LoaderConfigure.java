@@ -1,5 +1,6 @@
 package com.sunshine.view.library;
 
+import com.sunshine.view.library.data.Type;
 import com.sunshine.view.library.dispalyer.Displayer;
 import com.sunshine.view.library.listener.LoadListener;
 
@@ -19,6 +20,7 @@ public class LoaderConfigure {
     public boolean cacheBaseImage = false;//是否只缓存原图
     private Displayer mDisplayer;//图片加载器
     LoadListener listener;
+    public Type type = Type.FIFO;
 
     public LoaderConfigure(LoadListener listener) {
         this.listener = listener;
@@ -47,6 +49,11 @@ public class LoaderConfigure {
 
     public LoaderConfigure displayer(Displayer displayer) {
         this.mDisplayer = displayer;
+        return this;
+    }
+
+    public LoaderConfigure loadType(Type type) {
+        this.type = type;
         return this;
     }
 

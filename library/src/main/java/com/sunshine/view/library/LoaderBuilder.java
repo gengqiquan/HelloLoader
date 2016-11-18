@@ -5,8 +5,6 @@ import android.os.Build;
 import android.view.View;
 import android.widget.ImageView;
 
-import com.sunshine.view.library.utils.ImageUtil;
-
 /**
  * Created by Administrator on 2016/11/1.
  */
@@ -46,8 +44,7 @@ public class LoaderBuilder {
                     mLoader.removeTask(mImageView);
                 }
             });
-        ImageUtil.pretreatmentImage(mContext, mImageView, mLoaderConfigure);
-        mLoader.runTask();
+
     }
 
     private void checkDefault() {

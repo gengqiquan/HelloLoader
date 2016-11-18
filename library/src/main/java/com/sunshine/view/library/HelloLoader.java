@@ -16,6 +16,7 @@ import com.sunshine.view.library.data.ImageInfo;
 import com.sunshine.view.library.data.LoadedFrom;
 import com.sunshine.view.library.data.ResponseInfo;
 import com.sunshine.view.library.data.TaskInfo;
+import com.sunshine.view.library.data.Type;
 import com.sunshine.view.library.dispalyer.Displayer;
 import com.sunshine.view.library.dispalyer.SimpleImageDisplayer;
 import com.sunshine.view.library.download.Downloader;
@@ -40,16 +41,17 @@ public class HelloLoader {
     String mDiskCachePath;
     LoaderConfigure mDefaultConfigure;//默认的全局图片加载配置
     Downloader mDownloader;//图片下载器
-    LinkedList<TaskInfo> mTaskQueue;//解析请求队列
-    ExecutorService mThreadPool;// 线程池
+    LinkedList<TaskInfo> mNetTaskQueue;//网络请求解析队列
+    LinkedList<TaskInfo> mDiskTaskQueue;//硬盘解析队列
+    ExecutorService mNetThreadPool;// 网络请求解析线程池
+    ExecutorService mDiskThreadPool;// 硬盘解析线程池
     int threadCount = 4;
     Handler mPoolThreadHandler;//线程池循环句柄
     Thread mPoolThread;//后台任务调度线程
     Type mType = Type.LIFO;//请求加载顺序：正序还是倒序
-
-    public enum Type {
-        FIFO, LIFO;
-    }
+    static final int LOAD_FROM_NETWORK = 1;
+    static final int LOAD_FROM_DISK = 2;
+    boolean mAllowDiskThreadPool;
 
     //主线程设置图片句柄
     @SuppressLint("HandlerLeak")
@@ -84,16 +86,23 @@ public class HelloLoader {
     };
 
     public HelloLoader(Context mAppliactionContext, Cache cache, String mDiskCachePath, LoaderConfigure mDefaultConfigure
-            , Downloader downloader, Displayer displayer) {
+            , Downloader downloader, Displayer displayer, boolean allowDiskThreadPool) {
         this.mAppliactionContext = mAppliactionContext;
         this.cache = cache;
         this.mDiskCachePath = mDiskCachePath;
         this.mDefaultConfigure = mDefaultConfigure;
         this.mDownloader = downloader;
         this.mDefaultConfigure.displayer(displayer);
-        mTaskQueue = new LinkedList<>();
+        this.mAllowDiskThreadPool = allowDiskThreadPool;
+        mNetTaskQueue = new LinkedList<>();
+
         threadCount = Runtime.getRuntime().availableProcessors();
-        mThreadPool = Executors.newFixedThreadPool(threadCount + 1);
+        mNetThreadPool = Executors.newFixedThreadPool(threadCount + 1);
+        if (mAllowDiskThreadPool) {
+            mDiskThreadPool = Executors.newFixedThreadPool(threadCount + 1);
+            mDiskTaskQueue = new LinkedList<>();
+        }
+
         initBackThread();
     }
 
@@ -140,10 +149,23 @@ public class HelloLoader {
                     @Override
                     public void handleMessage(Message msg) {
                         // 线程池去取出一个任务进行执行
-                        Runnable runnable = getTask();
-                        if (runnable != null) {
-                            mThreadPool.execute(runnable);
+                        Runnable runnable;
+                        Type type = (Type) msg.obj;
+                        switch (msg.what) {
+                            case LOAD_FROM_NETWORK:
+                                runnable = getNetTask(type);
+                                if (runnable != null) {
+                                    mNetThreadPool.execute(runnable);
+                                }
+                                break;
+                            case LOAD_FROM_DISK:
+                                runnable = getDiskTask(type);
+                                if (runnable != null) {
+                                    mDiskThreadPool.execute(runnable);
+                                }
+                                break;
                         }
+
                     }
 
                 };
@@ -154,18 +176,43 @@ public class HelloLoader {
         mPoolThread.start();
     }
 
-    protected void runTask() {
-        mPoolThreadHandler.sendEmptyMessage(0);
+    protected void runTask(LoadedFrom loadedFrom, Type type) {
+        if (type == null) {
+            type = mType;
+        }
+        Message message = mPoolThreadHandler.obtainMessage();
+        message.obj = type;
+        if (loadedFrom == LoadedFrom.DISC || loadedFrom == LoadedFrom.DISC_CACHE) {
+            message.what = LOAD_FROM_DISK;
+            mPoolThreadHandler.sendMessage(message);
+        } else {
+            message.what = LOAD_FROM_NETWORK;
+            mPoolThreadHandler.sendMessage(message);
+        }
+
     }
 
-    private Runnable getTask() {
-        synchronized (mTaskQueue) {
-            if (mTaskQueue.isEmpty())
+    private Runnable getNetTask(Type type) {
+        synchronized (mNetTaskQueue) {
+            if (mNetTaskQueue.isEmpty())
                 return null;
-            if (mType == Type.FIFO) {
-                return mTaskQueue.removeFirst().getRunnable();
-            } else if (mType == Type.LIFO) {
-                return mTaskQueue.removeLast().getRunnable();
+            if (type == Type.FIFO) {
+                return mNetTaskQueue.removeFirst().getRunnable();
+            } else if (type == Type.LIFO) {
+                return mNetTaskQueue.removeLast().getRunnable();
+            }
+        }
+        return null;
+    }
+
+    private Runnable getDiskTask(Type type) {
+        synchronized (mDiskTaskQueue) {
+            if (mDiskTaskQueue.isEmpty())
+                return null;
+            if (type == Type.FIFO) {
+                return mDiskTaskQueue.removeFirst().getRunnable();
+            } else if (type == Type.LIFO) {
+                return mDiskTaskQueue.removeLast().getRunnable();
             }
         }
         return null;
@@ -173,8 +220,13 @@ public class HelloLoader {
 
 
     protected void removeTask(ImageView imageView) {
-        synchronized (mTaskQueue) {
-            mTaskQueue.remove(new TaskInfo(imageView, null));
+        synchronized (mNetTaskQueue) {
+            mNetTaskQueue.remove(new TaskInfo(imageView, null));
+        }
+        if (mAllowDiskThreadPool) {
+            synchronized (mDiskTaskQueue) {
+                mDiskTaskQueue.remove(new TaskInfo(imageView, null));
+            }
         }
     }
 
@@ -201,49 +253,86 @@ public class HelloLoader {
             msg.obj = imageInfo;
             UIHandler.sendMessageAtFrontOfQueue(msg);//内存找到优先直接加载。速度快
         } else {
+            ImageUtil.pretreatmentImage(context, imageView, configure);
             if (imageView.getTag() != null) {
                 removeTask(imageView);//顺序不能错，先从任务队列移除这个imageView之前所绑定的任务
             }
             imageView.setTag(tag);
-            Runnable runnable;
-            if (uri.startsWith("http")) {
-                runnable = getNetImageRunnable(context, configure, imageView, uri, tag, key);
+            File file = Utils.getDiskCacheDir(mInstance.mDiskCachePath, key);
+            if (configure.diskCache && file.exists())// 如果在本地缓存文件中发现
+            {
+                String path = Utils.getDiskCachePath(mInstance.mDiskCachePath, key);
+                buildLocalImageRunnable(context, configure, imageView, path, tag, key);
             } else {
-                runnable = getLocalImageRunnable(context, configure, imageView, uri, tag, key);
-            }
-            TaskInfo info = new TaskInfo(imageView, runnable);
-            synchronized (mTaskQueue) {
-                if (mTaskQueue.contains(info)) {
-                    mTaskQueue.remove(info);
-                    mTaskQueue.add(info);
+                if (uri.startsWith("http")) {
+                    buildNetImageRunnable(configure, imageView, uri, tag, key);
                 } else {
-                    mTaskQueue.add(info);
+                    buildLocalImageRunnable(context, configure, imageView, uri, tag, key);
                 }
             }
         }
+
+    }
+
+    public void put2NetTask(ImageView imageView, Runnable runnable, Type type) {
+        TaskInfo info = new TaskInfo(imageView, runnable);
+        synchronized (mNetTaskQueue) {
+            if (mNetTaskQueue.contains(info)) {
+                mNetTaskQueue.remove(info);
+                mNetTaskQueue.add(info);
+            } else {
+                mNetTaskQueue.add(info);
+            }
+        }
+        runTask(LoadedFrom.NETWORK, type);
+    }
+
+    public void put2DiskTask(ImageView imageView, Runnable runnable, Type type) {
+        TaskInfo info = new TaskInfo(imageView, runnable);
+        synchronized (mDiskTaskQueue) {
+            if (mDiskTaskQueue.contains(info)) {
+                mDiskTaskQueue.remove(info);
+                mDiskTaskQueue.add(info);
+            } else {
+                mDiskTaskQueue.add(info);
+            }
+        }
+        runTask(LoadedFrom.DISC, type);
     }
 
     @NonNull
-    public Runnable getNetImageRunnable(final Context context, final LoaderConfigure configure, final ImageView imageView, final String url, final String tag, final String key) {
-        return new Runnable() {
+    public void buildNetImageRunnable(final LoaderConfigure configure, final ImageView imageView, final String url, final String tag, final String key) {
+        Runnable runnable = new Runnable() {
 
             @Override
             public void run() {
-                // TODO: 这里其实应该加入优先级。本地如果有这个文件，应该优先级高一点，或者额外给个本地解析任务队列
                 Bitmap bm = null;
-                if (configure.diskCache) {
-                    bm = getBitmapFromDiskCache(context, key, imageView);
+                ResponseInfo responseInfo = mInstance.mDownloader.downloadImgByUrl(url);
+                if (responseInfo.success)// 如果下载成功
+                {
+                    bm = dealImage(configure, imageView, key, responseInfo.bitmap);
                 }
-                LoadedFrom from = LoadedFrom.DISC_CACHE;
-                if (bm == null) {
-                    ResponseInfo responseInfo = mInstance.mDownloader.downloadImgByUrl(url);
-                    if (responseInfo.success)// 如果下载成功
-                    {
-                        bm = dealImage(configure, imageView, key, responseInfo.bitmap);
-                        from = LoadedFrom.NETWORK;
-                    }
+                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, LoadedFrom.NETWORK);
+                Message msg = new Message();
+                msg.what = 0;
+                msg.obj = imageInfo;
+                UIHandler.sendMessage(msg);
+            }
+        };
+        put2NetTask(imageView, runnable, configure.type);
+    }
+
+    @NonNull
+    public void buildLocalImageRunnable(final Context context, final LoaderConfigure configure, final ImageView imageView, final String path, final String tag, final String key) {
+        Runnable runnable = new Runnable() {
+
+            @Override
+            public void run() {
+                Bitmap bm = getBitmapFromDisk(context, path, imageView);
+                if (bm != null) {
+                    bm = dealImage(configure, imageView, key, bm);
                 }
-                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, from);
+                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, LoadedFrom.DISC);
                 Message msg = new Message();
                 msg.what = 0;
                 msg.obj = imageInfo;
@@ -252,35 +341,12 @@ public class HelloLoader {
 
 
         };
-    }
+        if (mAllowDiskThreadPool) {
+            put2DiskTask(imageView, runnable, configure.type);
+        } else {
+            put2NetTask(imageView, runnable, configure.type);
+        }
 
-    @NonNull
-    public Runnable getLocalImageRunnable(final Context context, final LoaderConfigure configure, final ImageView imageView, final String path, final String tag, final String key) {
-        return new Runnable() {
-
-            @Override
-            public void run() {
-                Bitmap bm = null;
-                if (configure.diskCache) {
-                    bm = getBitmapFromDiskCache(context, key, imageView);
-                }
-                LoadedFrom from = LoadedFrom.DISC_CACHE;
-                if (bm == null) {
-                    bm = getBitmapFromDisk(context, path, imageView);
-                    if (bm != null) {
-                        bm = dealImage(configure, imageView, key, bm);
-                        from = LoadedFrom.DISC;
-                    }
-                }
-                ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, from);
-                Message msg = new Message();
-                msg.what = 0;
-                msg.obj = imageInfo;
-                UIHandler.sendMessage(msg);
-            }
-
-
-        };
     }
 
     private Bitmap getBitmapFromDiskCache(Context mContext, String key, ImageView imageView) {
@@ -335,6 +401,7 @@ public class HelloLoader {
         String mDiskCachePath;
         Downloader mDownloader;
         Displayer mDisplayer;
+        boolean mAllowDiskThreadPool = true;
 
         public Builder(Context context) {
             try {//防止传入的是activity的上下文
@@ -348,6 +415,11 @@ public class HelloLoader {
 
         public Builder defaultLoaderConfigure(LoaderConfigure loaderConfigure) {
             this.mDefaultConfigure = loaderConfigure;
+            return this;
+        }
+
+        public Builder allowDiskThreadPool(boolean allowDiskThreadPool) {
+            this.mAllowDiskThreadPool = allowDiskThreadPool;
             return this;
         }
 
@@ -387,7 +459,8 @@ public class HelloLoader {
             if (this.mDefaultConfigure == null) {
                 this.mDefaultConfigure = new LoaderConfigure(mDisplayer);
             }
-            mInstance = new HelloLoader(this.mContext, this.mCache, this.mDiskCachePath, this.mDefaultConfigure, this.mDownloader, this.mDisplayer);
+            mInstance = new HelloLoader(this.mContext, this.mCache, this.mDiskCachePath, this.mDefaultConfigure,
+                    this.mDownloader, this.mDisplayer, this.mAllowDiskThreadPool);
             return mInstance;
         }
 

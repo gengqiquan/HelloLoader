@@ -1,6 +1,5 @@
 package com.sunshine.view.helloloader;
 
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -12,9 +11,7 @@ import android.widget.ProgressBar;
 
 import com.sunshine.view.library.HelloLoader;
 import com.sunshine.view.library.LoaderConfigure;
-import com.sunshine.view.library.dispalyer.MaskDisplayer;
 import com.sunshine.view.library.listener.LoadListener;
-import com.sunshine.view.library.mask.PorterDuffMasker;
 
 import uk.co.senab.photoview.PhotoViewAttacher;
 
@@ -54,8 +51,10 @@ public class ImageDetailFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         final PhotoViewAttacher attacher = new PhotoViewAttacher(mImageView);
-        LoaderConfigure configure = new LoaderConfigure()
-       .displayer(new MaskDisplayer(new PorterDuffMasker(getResources(),R.mipmap.ic_launcher,PorterDuff.Mode.DST_IN)));
+        LoaderConfigure configure = new LoaderConfigure().memoryCache(false)
+                .diskCache(false)
+                .adjust(false);
+       //.displayer(new MaskDisplayer(new PorterDuffMasker(getResources(),R.mipmap.ic_launcher,PorterDuff.Mode.DST_IN)));
         configure.setLoadListener(new LoadListener() {
             @Override
             public void started() {
