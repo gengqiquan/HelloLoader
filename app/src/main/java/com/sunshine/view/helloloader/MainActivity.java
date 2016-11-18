@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final String str = doRequest("http://www.tngou.net/tnfs/api/list?id=7&rows=50&page=2");
+                final String str = doRequest("http://www.tngou.net/tnfs/api/list?id=4&rows=50&page=1");
                 if (str != null) {
                     try {
                         JSONObject obj = new JSONObject(str);

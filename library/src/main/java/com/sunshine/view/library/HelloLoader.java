@@ -52,7 +52,7 @@ public class HelloLoader {
     static final int LOAD_FROM_NETWORK = 1;
     static final int LOAD_FROM_DISK = 2;
     boolean mAllowDiskThreadPool;
-
+int count=0;
     //主线程设置图片句柄
     @SuppressLint("HandlerLeak")
     private Handler UIHandler = new Handler() {
@@ -64,6 +64,7 @@ public class HelloLoader {
                     Bitmap bm = imageInfo.getBitmap();
                     LoaderConfigure configure = imageInfo.getLoaderConfigure();
                     ImageView imageView = imageInfo.getImageView();
+                    count++;
                     if (imageView.getTag() != null && imageView.getTag().equals(imageInfo.getTag())) {
                         if (bm == null) {
                             if (configure.error > 0) {
@@ -156,12 +157,26 @@ public class HelloLoader {
                                 runnable = getNetTask(type);
                                 if (runnable != null) {
                                     mNetThreadPool.execute(runnable);
+                                }else {
+                                    try {
+                                        Thread.sleep(1000);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
                                 }
                                 break;
                             case LOAD_FROM_DISK:
                                 runnable = getDiskTask(type);
                                 if (runnable != null) {
                                     mDiskThreadPool.execute(runnable);
+                                }else {
+                                    try {
+                                        Thread.sleep(1000);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
                                 }
                                 break;
                         }
@@ -220,10 +235,13 @@ public class HelloLoader {
 
 
     protected void removeTask(ImageView imageView) {
-        synchronized (mNetTaskQueue) {
-            mNetTaskQueue.remove(new TaskInfo(imageView, null));
+        if (mNetTaskQueue.contains(new TaskInfo(imageView, null))) {
+            synchronized (mNetTaskQueue) {
+                mNetTaskQueue.remove(new TaskInfo(imageView, null));
+            }
         }
-        if (mAllowDiskThreadPool) {
+
+        if (mAllowDiskThreadPool && mNetTaskQueue.contains(new TaskInfo(imageView, null))) {
             synchronized (mDiskTaskQueue) {
                 mDiskTaskQueue.remove(new TaskInfo(imageView, null));
             }
@@ -238,9 +256,12 @@ public class HelloLoader {
      */
     @NonNull
     public void putTask(final Context context, final LoaderConfigure configure, final ImageView imageView, final String uri) {
-        //加时间戳，防止列表加载的时候有相同路径的多张图片重复加载错乱问题
+
         final String key = Utils.md5(uri);
-        final String tag = key + System.currentTimeMillis();
+        //加时间戳，防止列表加载的时候有相同路径的多张图片重复加载错乱问题
+        //会导致Gridview偶尔第一张图片加载失败
+       // final String tag = key + System.currentTimeMillis();
+        final String tag = key ;
         Bitmap bm = null;
         if (configure.memoryCache) {
             bm = memoryCacheCheck(key);
@@ -248,10 +269,10 @@ public class HelloLoader {
         if (bm != null) {
             imageView.setTag(tag);
             ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, LoadedFrom.MEMORY_CACHE);
-            Message msg = new Message();
+            Message msg = UIHandler.obtainMessage();
             msg.what = 0;
             msg.obj = imageInfo;
-            UIHandler.sendMessageAtFrontOfQueue(msg);//内存找到优先直接加载。速度快
+            UIHandler.sendMessage(msg);//内存找到优先直接加载。速度快
         } else {
             ImageUtil.pretreatmentImage(context, imageView, configure);
             if (imageView.getTag() != null) {
@@ -313,7 +334,7 @@ public class HelloLoader {
                     bm = dealImage(configure, imageView, key, responseInfo.bitmap);
                 }
                 ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, LoadedFrom.NETWORK);
-                Message msg = new Message();
+                Message msg = UIHandler.obtainMessage();
                 msg.what = 0;
                 msg.obj = imageInfo;
                 UIHandler.sendMessage(msg);
@@ -333,7 +354,7 @@ public class HelloLoader {
                     bm = dealImage(configure, imageView, key, bm);
                 }
                 ImageInfo imageInfo = new ImageInfo(imageView, tag, bm, configure, LoadedFrom.DISC);
-                Message msg = new Message();
+                Message msg = UIHandler.obtainMessage();
                 msg.what = 0;
                 msg.obj = imageInfo;
                 UIHandler.sendMessage(msg);
@@ -349,17 +370,17 @@ public class HelloLoader {
 
     }
 
-    private Bitmap getBitmapFromDiskCache(Context mContext, String key, ImageView imageView) {
-        Bitmap bm = null;
-        File file = Utils.getDiskCacheDir(mInstance.mDiskCachePath, key);
-        if (file.exists())// 如果在本地缓存文件中发现
-        {
-            ImageSizeUtil.ImageSize imageSize = ImageSizeUtil.getImageViewSize(imageView);
-            // 根据控件大小获取本地压缩处理后的图片
-            bm = ImageUtil.decodeSampledBitmapFromPath(file.getAbsolutePath(), imageSize);
-        }
-        return bm;
-    }
+//    private Bitmap getBitmapFromDiskCache(Context mContext, String key, ImageView imageView) {
+//        Bitmap bm = null;
+//        File file = Utils.getDiskCacheDir(mInstance.mDiskCachePath, key);
+//        if (file.exists())// 如果在本地缓存文件中发现
+//        {
+//            ImageSizeUtil.ImageSize imageSize = ImageSizeUtil.getImageViewSize(imageView);
+//            // 根据控件大小获取本地压缩处理后的图片
+//            bm = ImageUtil.decodeSampledBitmapFromPath(file.getAbsolutePath(), imageSize);
+//        }
+//        return bm;
+//    }
 
     private Bitmap getBitmapFromDisk(Context mContext, String path, ImageView imageView) {
         Bitmap bm = null;
