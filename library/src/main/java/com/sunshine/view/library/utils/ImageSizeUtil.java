@@ -14,12 +14,6 @@ import java.lang.reflect.Field;
  */
 public class ImageSizeUtil
 {
-	/**
-	 * 根据需求的宽和高以及图片实际的宽和高计算SampleSize
-	 * 
-	 * @param options
-	 * @return
-	 */
 	public static int caculateInSampleSize(Options options, int reqWidth,
 			int reqHeight)
 	{
@@ -39,12 +33,6 @@ public class ImageSizeUtil
 		return inSampleSize;
 	}
 
-	/**
-	 * 根据ImageView获适当的压缩的宽和高
-	 * 
-	 * @param imageView
-	 * @return
-	 */
 	public static ImageSize getImageViewSize(ImageView imageView)
 	{
 
@@ -94,14 +82,6 @@ public class ImageSizeUtil
 		public int width;
 		public int height;
 	}
-	
-	/**
-	 * 通过反射获取imageview的某个属性值
-	 * 
-	 * @param object
-	 * @param fieldName
-	 * @return
-	 */
 	private static int getImageViewFieldValue(Object object, String fieldName)
 	{
 		int value = 0;

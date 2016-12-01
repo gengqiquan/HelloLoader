@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.sunshine.view.library.cache.Cache;
@@ -67,12 +68,12 @@ int count=0;
                     count++;
                     if (imageView.getTag() != null && imageView.getTag().equals(imageInfo.getTag())) {
                         if (bm == null) {
-                            if (configure.error > 0) {
-                                bm = ImageUtil.ReadBitmapById(mAppliactionContext, configure.error);
+                            if (configure.getError() > 0) {
+                                bm = ImageUtil.ReadBitmapById(mAppliactionContext, configure.getError());
                             }
                         }
                         if (bm != null) {
-                            bm = ImageUtil.configureImage(bm, imageView, configure);
+                            Log.e("bitmap:","width:"+bm.getWidth()+"height:"+bm.getHeight());
                             configure.getDisplayer().display(bm, imageInfo);
                             if (configure.getLoadListener() != null) {
                                 configure.getLoadListener().completed();
@@ -80,6 +81,7 @@ int count=0;
                         }
 
                     }
+
                     break;
             }
         }
@@ -98,7 +100,8 @@ int count=0;
         mNetTaskQueue = new LinkedList<>();
 
         threadCount = Runtime.getRuntime().availableProcessors();
-        mNetThreadPool = Executors.newFixedThreadPool(threadCount + 1);
+        Log.e("threadCount:",threadCount+"");
+        mNetThreadPool = Executors.newFixedThreadPool(2*threadCount + 1);
         if (mAllowDiskThreadPool) {
             mDiskThreadPool = Executors.newFixedThreadPool(threadCount + 1);
             mDiskTaskQueue = new LinkedList<>();
@@ -263,7 +266,7 @@ int count=0;
        // final String tag = key + System.currentTimeMillis();
         final String tag = key ;
         Bitmap bm = null;
-        if (configure.memoryCache) {
+        if (configure.isMemoryCache()) {
             bm = memoryCacheCheck(key);
         }
         if (bm != null) {
@@ -280,7 +283,7 @@ int count=0;
             }
             imageView.setTag(tag);
             File file = Utils.getDiskCacheDir(mInstance.mDiskCachePath, key);
-            if (configure.diskCache && file.exists())// 如果在本地缓存文件中发现
+            if (configure.isDiskCache() && file.exists())// 如果在本地缓存文件中发现
             {
                 String path = Utils.getDiskCachePath(mInstance.mDiskCachePath, key);
                 buildLocalImageRunnable(context, configure, imageView, path, tag, key);
@@ -370,18 +373,6 @@ int count=0;
 
     }
 
-//    private Bitmap getBitmapFromDiskCache(Context mContext, String key, ImageView imageView) {
-//        Bitmap bm = null;
-//        File file = Utils.getDiskCacheDir(mInstance.mDiskCachePath, key);
-//        if (file.exists())// 如果在本地缓存文件中发现
-//        {
-//            ImageSizeUtil.ImageSize imageSize = ImageSizeUtil.getImageViewSize(imageView);
-//            // 根据控件大小获取本地压缩处理后的图片
-//            bm = ImageUtil.decodeSampledBitmapFromPath(file.getAbsolutePath(), imageSize);
-//        }
-//        return bm;
-//    }
-
     private Bitmap getBitmapFromDisk(Context mContext, String path, ImageView imageView) {
         Bitmap bm = null;
         if (!Utils.checkNULL(path))// 如果文件路径不为空
@@ -394,12 +385,12 @@ int count=0;
     }
 
     private Bitmap dealImage(LoaderConfigure configure, ImageView imageView, String key, Bitmap bm) {
-        if (configure.cacheBaseImage || !configure.adjust) {//缓存原图,或者不压缩的情况下
+        if (configure.isCacheBaseImage() || !configure.isAdjust()) {//缓存原图,或者不压缩的情况下
             putIntoCache(configure, key, bm);
         }
-        if (configure.adjust) {//是否根据控件大小压缩图片大小
+        if (configure.isAdjust()) {//是否根据控件大小压缩图片大小
             bm = ImageUtil.scaleImg(bm, imageView.getWidth(), imageView.getHeight());
-            if (!configure.cacheBaseImage) {//缓存压缩后图片
+            if (!configure.isCacheBaseImage()) {//缓存压缩后图片
                 putIntoCache(configure, key, bm);
             }
         }
@@ -407,10 +398,10 @@ int count=0;
     }
 
     private void putIntoCache(LoaderConfigure configure, String key, Bitmap bm) {
-        if (configure.memoryCache) {
+        if (configure.isMemoryCache()) {
             put2MemoryCache(key, bm);//放入内存缓存
         }
-        if (configure.diskCache) {
+        if (configure.isDiskCache()) {
             Utils.write2File(mInstance.mDiskCachePath, bm, key);//写入本地文件
         }
     }

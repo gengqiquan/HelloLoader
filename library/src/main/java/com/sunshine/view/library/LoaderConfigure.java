@@ -9,26 +9,20 @@ import com.sunshine.view.library.listener.LoadListener;
  */
 
 public class LoaderConfigure {
-    public int loading = 0;//加载占位图资源id
-    public int error = 0;//加载失败展位图资源id
-    int width = -1;//图片目标宽度
-    int height = -1;//图片目标高度
-    public boolean roundBitmap = false;//是否圆形图片
-    public boolean memoryCache = true;//是否需要内存缓存
-    public boolean diskCache = true;//是否需要本地缓存
-    public boolean adjust = true;//是否需要按控件大小裁剪
-    public boolean cacheBaseImage = false;//是否只缓存原图
+    private int loading = 0;//加载占位图资源id
+    private int error = 0;//加载失败展位图资源id
+    private boolean memoryCache = true;//是否需要内存缓存
+    private boolean diskCache = true;//是否需要本地缓存
+    private boolean adjust = false;//是否需要按控件大小裁剪
+    private boolean cacheBaseImage = true;//是否缓存原图
     private Displayer mDisplayer;//图片加载器
-    LoadListener listener;
-    public Type type = Type.FIFO;
-
+    private LoadListener listener;
+    public Type type = Type.LIFO;
+    public LoaderConfigure() {
+    }
     public LoaderConfigure(LoadListener listener) {
         this.listener = listener;
     }
-
-    public LoaderConfigure() {
-    }
-
     public LoaderConfigure(Displayer displayer) {
         this.mDisplayer = displayer;
     }
@@ -38,7 +32,7 @@ public class LoaderConfigure {
         return listener;
     }
 
-    public LoaderConfigure setLoadListener(LoadListener listener) {
+    public LoaderConfigure loadListener(LoadListener listener) {
         this.listener = listener;
         return this;
     }
@@ -77,10 +71,22 @@ public class LoaderConfigure {
         return this;
     }
 
-    public LoaderConfigure roundBitmap(boolean round) {
-        roundBitmap = round;
-        return this;
+    public boolean isMemoryCache() {
+        return memoryCache;
     }
+
+    public boolean isDiskCache() {
+        return diskCache;
+    }
+
+    public boolean isAdjust() {
+        return adjust;
+    }
+
+    public boolean isCacheBaseImage() {
+        return cacheBaseImage;
+    }
+
 
     public LoaderConfigure loading(int res) {
         loading = res;
@@ -92,11 +98,11 @@ public class LoaderConfigure {
         return this;
     }
 
-    public LoaderConfigure size(int w, int h) {
-        if (w > 0 && h > 0) {
-            width = w;
-            height = h;
-        }
-        return this;
+    public int getError() {
+        return error;
+    }
+
+    public int getLoading() {
+        return loading;
     }
 }

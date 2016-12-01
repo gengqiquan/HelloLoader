@@ -21,31 +21,12 @@ import static android.os.Build.VERSION_CODES.HONEYCOMB;
  */
 
 public class Utils {
-    /**
-     * 获得缓存图片的文件
-     *
-     * @param path
-     * @param uniqueName
-     * @return
-     */
     public static File getDiskCacheDir(String path, String uniqueName) {
         return new File(path + File.separator + uniqueName);
     }
-    /**
-     * 获得缓存图片的地址
-     *
-     * @param path
-     * @param uniqueName
-     * @return
-     */
     public static String getDiskCachePath(String path, String uniqueName) {
         return  path + File.separator + uniqueName;
     }
-    /**
-     * 写入文件
-     * @author Administrator
-     * @date 2016/11/1 17:40
-     */
     public static void write2File(String path, Bitmap bm, String key) {
         File file = Utils.getDiskCacheDir(path, key);
         FileOutputStream fos = null;
@@ -63,12 +44,6 @@ public class Utils {
             }
         }
     }
-    /**
-     * 利用签名辅助类，将字符串字节数组
-     *
-     * @param str
-     * @return
-     */
     public static  String md5(String str) {
         byte[] digest = null;
         try {
@@ -82,12 +57,6 @@ public class Utils {
         return null;
     }
 
-    /**
-     * 方式二
-     *
-     * @param bytes
-     * @return
-     */
     public static  String bytes2hex02(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         String tmp = null;
@@ -111,13 +80,6 @@ public class Utils {
         if (largeHeap && SDK_INT >= HONEYCOMB) {
             memoryClass = ActivityManagerHoneycomb.getLargeMemoryClass(am);
         }
-//        if(memoryClass>70){
-//            memoryClass=10;
-//        }
-//        else {
-//            memoryClass=memoryClass/7;
-//        }
-        // Target ~15% of the available heap.
         return 1024 * 1024 * memoryClass/7;
     }
 

@@ -14,7 +14,6 @@ import android.widget.ImageView;
 import com.android.volley.toolbox.Volley;
 import com.sunshine.view.library.HelloLoader;
 import com.sunshine.view.library.LoaderConfigure;
-import com.sunshine.view.library.dispalyer.FadeInImageDisplayer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,12 +21,9 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -47,17 +43,15 @@ public class MainActivity extends AppCompatActivity {
                 .writeTimeout(5, TimeUnit.SECONDS)
                 .build();
         loaderConfigure = new LoaderConfigure()
-                .memoryCache(true)
-                .diskCache(true)
-              //  .loading(R.mipmap.ic_launcher)
+                .memoryCache(false)
+                .loading(R.mipmap.ic_launcher)
                 .error(R.mipmap.ic_launcher);
         loader = new HelloLoader
                 .Builder(this)
                 .downloader(new VolleyDownLoader(Volley.newRequestQueue(this)))
 //                .downloader(new Okhttp3DownLoader(client))
                 .defaultLoaderConfigure(loaderConfigure)
-                .displayer(new FadeInImageDisplayer(500))
-                .allowDiskThreadPool(true)
+             //   .displayer(new FadeInImageDisplayer(500))
                 .build();
         GridView listView = (GridView) findViewById(R.id.list);
         final myAdapter adapter = new myAdapter();
@@ -65,7 +59,8 @@ public class MainActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final String str = doRequest("http://www.tngou.net/tnfs/api/list?id=4&rows=50&page=1");
+                final String str = doRequest("http://www.tngou.net/tnfs/api/list?rows=50&page=2");
+                Log.d("DataLoader", "post str is " + str);
                 if (str != null) {
                     try {
                         JSONObject obj = new JSONObject(str);
@@ -115,28 +110,6 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    private String getPostDataString(Map<String, String> params) throws UnsupportedEncodingException {
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
-        for (String key : params.keySet()) {
-            String value = params.get(key);
-            if (value == null)
-                continue;
-
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(key, "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(value, "UTF-8"));
-        }
-
-        String str = result.toString();
-        Log.d("DataLoader", "post params is " + str);
-        return str;
-    }
 
     ArrayList<String> list = new ArrayList<>();
 
@@ -151,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 holder = (ViewHolder) convertView.getTag();
             }
-            loader.bind(holder.imageView).load(list.get(position) + "_" + holder.imageView.getWidth() + "x" + holder.imageView.getHeight());
+            loader.bind(holder.imageView).load(list.get(position) + "_300x300");
             holder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

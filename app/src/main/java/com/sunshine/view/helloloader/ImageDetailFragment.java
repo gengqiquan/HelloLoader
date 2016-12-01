@@ -52,10 +52,10 @@ public class ImageDetailFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         final PhotoViewAttacher attacher = new PhotoViewAttacher(mImageView);
         LoaderConfigure configure = new LoaderConfigure().memoryCache(false)
-                .diskCache(false)
+                .diskCache(true)
                 .adjust(false);
        //.displayer(new MaskDisplayer(new PorterDuffMasker(getResources(),R.mipmap.ic_launcher,PorterDuff.Mode.DST_IN)));
-        configure.setLoadListener(new LoadListener() {
+        configure.loadListener(new LoadListener() {
             @Override
             public void started() {
                 Log.e("image","started");

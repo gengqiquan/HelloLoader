@@ -1,10 +1,9 @@
-package com.sunshine.view.helloloader;
+package com.sunshine.view.library.download;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.sunshine.view.library.data.ResponseInfo;
-import com.sunshine.view.library.download.Downloader;
 
 import java.io.IOException;
 import java.io.InputStream;

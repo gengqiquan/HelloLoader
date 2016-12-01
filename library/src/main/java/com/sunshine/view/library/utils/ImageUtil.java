@@ -278,14 +278,6 @@ public class ImageUtil {
         return resizeBmp;
     }
 
-    /**
-     * 描述：缩放图片,不压缩的缩放.
-     *
-     * @param bitmap        the bitmap
-     * @param desiredWidth  新图片的宽
-     * @param desiredHeight 新图片的高
-     * @return Bitmap 新图片
-     */
     public static Bitmap scaleImg(Bitmap bitmap, int desiredWidth, int desiredHeight) {
 
         if (!checkBitmap(bitmap)) {
@@ -309,14 +301,6 @@ public class ImageUtil {
         }
         return resizeBmp;
     }
-
-    /**
-     * 描述：根据等比例缩放图片.
-     *
-     * @param bitmap the bitmap
-     * @param scale  比例
-     * @return Bitmap 新图片
-     */
     public static Bitmap scaleImg(Bitmap bitmap, float scale) {
 
         if (!checkBitmap(bitmap)) {
@@ -348,14 +332,6 @@ public class ImageUtil {
         return resizeBmp;
     }
 
-    /**
-     * 描述：裁剪图片.
-     *
-     * @param file          File对象
-     * @param desiredWidth  新图片的宽
-     * @param desiredHeight 新图片的高
-     * @return Bitmap 新图片
-     */
     public static Bitmap cutImg(File file, int desiredWidth, int desiredHeight) {
 
         Bitmap resizeBmp = null;
@@ -536,12 +512,6 @@ public class ImageUtil {
         return !(desiredWidth <= 0 || desiredHeight <= 0);
     }
 
-    /**
-     * Drawable转Bitmap.
-     *
-     * @param drawable 要转化的Drawable
-     * @return Bitmap
-     */
     public static Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(),
                 drawable.getOpacity() != PixelFormat.OPAQUE ? Config.ARGB_8888 : Config.RGB_565);
@@ -550,13 +520,6 @@ public class ImageUtil {
         drawable.draw(canvas);
         return bitmap;
     }
-
-    /**
-     * Bitmap对象转换Drawable对象.
-     *
-     * @param bitmap 要转化的Bitmap对象
-     * @return Drawable 转化完成的Drawable对象
-     */
     public static Drawable bitmapToDrawable(Bitmap bitmap) {
         BitmapDrawable mBitmapDrawable = null;
         try {
@@ -569,14 +532,6 @@ public class ImageUtil {
         }
         return mBitmapDrawable;
     }
-
-    /**
-     * Bitmap对象转换TransitionDrawable对象.
-     *
-     * @param bitmap 要转化的Bitmap对象 imageView.setImageDrawable(td);
-     *               td.startTransition(200);
-     * @return Drawable 转化完成的Drawable对象
-     */
     public static TransitionDrawable bitmapToTransitionDrawable(Bitmap bitmap) {
         TransitionDrawable mBitmapDrawable = null;
         try {
@@ -590,13 +545,6 @@ public class ImageUtil {
         return mBitmapDrawable;
     }
 
-    /**
-     * Drawable对象转换TransitionDrawable对象.
-     *
-     * @param drawable 要转化的Drawable对象 imageView.setImageDrawable(td);
-     *                 td.startTransition(200);
-     * @return Drawable 转化完成的Drawable对象
-     */
     public static TransitionDrawable drawableToTransitionDrawable(Drawable drawable) {
         TransitionDrawable mBitmapDrawable = null;
         try {
@@ -610,14 +558,6 @@ public class ImageUtil {
         return mBitmapDrawable;
     }
 
-    /**
-     * 将Bitmap转换为byte[].
-     *
-     * @param bitmap          the bitmap
-     * @param mCompressFormat 图片格式 Bitmap.CompressFormat.JPEG,CompressFormat.PNG
-     * @param needRecycle     是否需要回收
-     * @return byte[] 图片的byte[]
-     */
     public static byte[] bitmap2Bytes(Bitmap bitmap, CompressFormat mCompressFormat, final boolean needRecycle) {
         byte[] result = null;
         ByteArrayOutputStream output = null;
@@ -642,13 +582,6 @@ public class ImageUtil {
         return result;
     }
 
-    /**
-     * 获取Bitmap大小.
-     *
-     * @param bitmap          the bitmap
-     * @param mCompressFormat 图片格式 Bitmap.CompressFormat.JPEG,CompressFormat.PNG
-     * @return 图片的大小
-     */
     public static int getByteCount(Bitmap bitmap, CompressFormat mCompressFormat) {
         int size = 0;
         ByteArrayOutputStream output = null;
@@ -690,12 +623,6 @@ public class ImageUtil {
         return bitmap;
     }
 
-    /**
-     * 将ImageView转换为Bitmap.
-     *
-     * @param view 要转换为bitmap的View
-     * @return byte[] 图片的byte[]
-     */
     public static Bitmap imageView2Bitmap(ImageView view) {
         Bitmap bitmap = null;
         try {
@@ -1221,27 +1148,21 @@ public class ImageUtil {
         Bitmap bitmap = decodeStream(is, null, options);
         try {
             is.close();
+        } catch (IOException e) {
         }
-        catch (IOException e){}
         return bitmap;
     }
 
-    public static Bitmap configureImage(Bitmap bm, ImageView imageView, LoaderConfigure configure) {
-        if (configure.roundBitmap) {
-            bm = ImageUtil.toRoundBitmap(bm);
-        }
-        return bm;
-    }
 
     public static void pretreatmentImage(Context context, ImageView imageView, LoaderConfigure configure) {
 
         Bitmap bm = null;
-        if (configure.loading > 0)
-            bm = ReadBitmapById(context, configure.loading);
+        if (configure.getLoading() > 0)
+            bm = ReadBitmapById(context, configure.getLoading());
 
         if (bm != null) {
-            imageView.setImageBitmap(configureImage(bm, imageView, configure));
-        }else{//防止从Viewholder中复用时本身已经加载了图片
+            imageView.setImageBitmap(bm);
+        } else {//防止从Viewholder中复用时本身已经加载了图片
             imageView.setImageDrawable(new BitmapDrawable());
         }
     }

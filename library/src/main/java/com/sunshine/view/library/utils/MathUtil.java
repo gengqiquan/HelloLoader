@@ -30,25 +30,10 @@ import java.math.BigDecimal;
  * @date：2013-01-17 下午11:52:13
  */
 public class MathUtil {
-
-  /**
-   * 四舍五入.
-   *
-   * @param number  原数
-   * @param decimal 保留几位小数
-   * @return 四舍五入后的值
-   */
   public static BigDecimal round(double number, int decimal){
     return new BigDecimal(number).setScale(decimal, BigDecimal.ROUND_HALF_UP);
   }
   
-  /**
-   * 描述：字节数组转换成16进制串.
-   *
-   * @param b the b
-   * @param length the length
-   * @return the string
-   */
   public static String byte2HexStr(byte[] b, int length){
     String hs = "";
     String stmp = "";
@@ -64,12 +49,6 @@ public class MathUtil {
     return hs.toUpperCase();
   } 
   
-  /**
-   * 二进制转为十六进制.
-   *
-   * @param binary the binary
-   * @return char hex
-   */
 	public static char binaryToHex(int binary) {
 		char ch = ' ';
 		switch (binary){
@@ -128,17 +107,7 @@ public class MathUtil {
 	}
 	
 	
-	/**
-	 *  
-	 * 一维数组转为二维数组 
-	 *  
-	 *
-	 * @param m the m
-	 * @param width the width
-	 * @param height the height
-	 * @return the int[][]
-	 */  
-    public static int[][] arrayToMatrix(int[] m, int width, int height) {  
+    public static int[][] arrayToMatrix(int[] m, int width, int height) {
         int[][] result = new int[height][width];  
         for (int i = 0; i < height; i++) {  
             for (int j = 0; j < width; j++) {  
@@ -149,16 +118,7 @@ public class MathUtil {
         return result;  
     }  
 
-	
-	/**
-	 *  
-	 * 二维数组转为一维数组 
-	 *  
-	 *
-	 * @param m the m
-	 * @return the double[]
-	 */  
-    public static double[] matrixToArray(double[][] m) {  
+    public static double[] matrixToArray(double[][] m) {
         int p = m.length * m[0].length;  
         double[] result = new double[p];  
         for (int i = 0; i < m.length; i++) {  
@@ -170,13 +130,7 @@ public class MathUtil {
         return result;  
     }  
 
-    /**
-     * 描述：int数组转换为double数组.
-     *
-     * @param input the input
-     * @return the double[]
-     */
-    public static double[] intToDoubleArray(int[] input) {  
+    public static double[] intToDoubleArray(int[] input) {
         int length = input.length;  
         double[] output = new double[length];  
         for (int i = 0; i < length; i++){  
@@ -185,13 +139,7 @@ public class MathUtil {
         return output;  
     }  
     
-    /**
-     * 描述：int二维数组转换为double二维数组.
-     *
-     * @param input the input
-     * @return the double[][]
-     */
-    public static double[][] intToDoubleMatrix(int[][] input) {  
+    public static double[][] intToDoubleMatrix(int[][] input) {
         int height = input.length;  
         int width = input[0].length;  
         double[][] output = new double[height][width];  
@@ -205,12 +153,6 @@ public class MathUtil {
         return output;  
     }  
 
-    /**
-     * 计算数组的平均值.
-     *
-     * @param pixels 数组
-     * @return int 平均值
-     */
     public static int average(int[] pixels) {
 		float m = 0;
 		for (int i = 0; i < pixels.length; ++i) {
@@ -220,12 +162,6 @@ public class MathUtil {
 		return (int) m;
 	}
     
-    /**
-     * 计算数组的平均值.
-     *
-     * @param pixels 数组
-     * @return int 平均值
-     */
     public static int average(double[] pixels) {
 		float m = 0;
 		for (int i = 0; i < pixels.length; ++i) {
@@ -235,36 +171,12 @@ public class MathUtil {
 		return (int) m;
 	}
     
-    /**
-     * 
-     * 描述：点在直线上.
-     * 点A（x，y）,B(x1,y1),C(x2,y2) 点A在直线BC上吗?
-     * @param x
-     * @param y
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @return
-     */
     public boolean pointAtSLine(double x,double y,double x1,double y1,double x2,double y2){
         double result = ( x - x1 ) * ( y2 - y1 ) - ( y - y1 ) * ( x2 - x1 );
 		return result == 0;
     }
     
     
-	/**
-	 * 
-	 * 描述：点在线段上.
-	 * 点A（x，y）,B(x1,y1),C(x2,y2)   点A在线段BC上吗?
-	 * @param x
-	 * @param y
-	 * @param x1
-	 * @param y1
-	 * @param x2
-	 * @param y2
-	 * @return
-	 */
     public static boolean pointAtELine(double x,double y,double x1,double y1,double x2,double y2){
     	double result = ( x - x1 ) * ( y2 - y1 ) - ( y - y1 ) * ( x2 - x1 );
     	if(result==0){
@@ -275,20 +187,6 @@ public class MathUtil {
     	}
     }
     
-    /**
-     * 
-     * 描述：两条直线相交.
-     * 点A（x1，y1）,B(x2,y2),C(x3,y3),D(x4,y4)   直线AB与直线CD相交吗?
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @param x3
-     * @param y3
-     * @param x4
-     * @param y4
-     * @return
-     */
     public  static boolean LineAtLine(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4){
 	    double k1 = ( y2-y1 )/(x2-x1);
 	    double k2 = ( y4-y3 )/(x4-x3);
@@ -303,21 +201,6 @@ public class MathUtil {
 		}
 	}
     
-    /**
-     * 
-     * 描述：线段与线段相交.
-     * 点A（x1，y1）,B(x2,y2),C(x3,y3),D(x4,y4)   
-     * 线段AB与线段CD相交吗?
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @param x3
-     * @param y3
-     * @param x4
-     * @param y4
-     * @return
-     */
     public static boolean eLineAtELine(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4){
 		    double k1 = ( y2-y1 )/(x2-x1);
 		    double k2 = ( y4-y3 )/(x4-x3);
@@ -336,22 +219,6 @@ public class MathUtil {
 						&& y >= Math.min(y3, y4) && y <= Math.max(y3, y4);
 	       }
 	}
-    
-    /**
-     * 
-     * 描述：线段直线相交.
-     * 点A（x1，y1）,B(x2,y2),C(x3,y3),D(x4,y4)   
-     * 线段AB与直线CD相交吗?
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @param x3
-     * @param y3
-     * @param x4
-     * @param y4
-     * @return
-     */
     public static boolean eLineAtLine(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4){
 		    double k1 = ( y2-y1 )/(x2-x1);
 		    double k2 = ( y4-y3 )/(x4-x3);
@@ -368,42 +235,12 @@ public class MathUtil {
 						&& y >= Math.min(y1, y2) && y <= Math.max(y1, y2);
 		}
 	}
-    
-    /**
-     * 
-     * 描述：点在矩形内.
-     * 矩形的边都是与坐标系平行或垂直的。
-     * 只要判断该点的横坐标和纵坐标是否夹在矩形的左右边和上下边之间。
-     * 点A（x，y）,B(x1,y1),C(x2,y2)   点A在以直线BC为对角线的矩形中吗?
-     * @param x
-     * @param y
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @return
-     */
     public static boolean pointAtRect(double x,double y,double x1,double y1,double x2,double y2){
 		//System.out.println("点（"+x+","+y+"）在矩形内上");
 //System.out.println("点（"+x+","+y+"）不在矩形内上");
 		return x >= Math.min(x1, x2) && x <= Math.max(x1, x2) && y >= Math.min(y1, y2) && y <= Math.max(y1, y2);
 	}
     
-    /**
-     * 
-     * 描述：矩形在矩形内.
-     * 只要对角线的两点都在另一个矩形中就可以了.
-     * 点A(x1,y1),B(x2,y2)，C(x1,y1),D(x2,y2) 以直线AB为对角线的矩形在以直线BC为对角线的矩形中吗?
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @param x3
-     * @param y3
-     * @param x4
-     * @param y4
-     * @return
-     */
     public static boolean rectAtRect(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4){
 		//System.out.println("矩形在矩形内");
 //System.out.println("矩形不在矩形内");
@@ -412,21 +249,6 @@ public class MathUtil {
 				&& x2 >= Math.min(x3, x4) && x2 <= Math.max(x3, x4)
 				&& y2 >= Math.min(y3, y4) && y2 <= Math.max(y3, y4);
 	}
-    
-    /**
-     * 
-     * 描述：圆心在矩形内 .
-     * 圆心在矩形中且圆的半径小于等于圆心到矩形四边的距离的最小值。
-     * 圆心(x,y) 半径r  矩形对角点A（x1，y1），B(x2，y2)
-     * @param x
-     * @param y
-     * @param r
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @return
-     */
     public static boolean circleAtRect(double x,double y,double r,double x1,double y1,double x2,double y2){
 		//圆心在矩形内   
 		if(x >= Math.min(x1, x2) && x <= Math.max(x1,x2) 
@@ -446,34 +268,12 @@ public class MathUtil {
 	   }
 	}
 
-    /**
-     *  
-     * 描述：获取两点间的距离.
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @return
-     */
-    public static double getDistance(double x1,double y1,double x2,double y2) {  
+    public static double getDistance(double x1,double y1,double x2,double y2) {
     	double x = x1 - x2;  
     	double y = y1 - y2;  
         return Math.sqrt(x * x + y * y);  
     }  
     
-    
-    /**
-	 * 矩形碰撞检测 参数为x,y,width,height
-	 * @param x1 第一个矩形的x
-	 * @param y1 第一个矩形的y
-	 * @param w1 第一个矩形的w
-	 * @param h1 第一个矩形的h
-	 * @param x2 第二个矩形的x
-	 * @param y2 第二个矩形的y
-	 * @param w2 第二个矩形的w
-	 * @param h2 第二个矩形的h
-	 * @return 是否碰撞
-	 */
 	public static boolean isRectCollision(float x1, float y1, float w1,
 			float h1, float x2, float y2, float w2, float h2) {
 		if (x2 > x1 && x2 > x1 + w1) {
