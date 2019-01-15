@@ -2,10 +2,10 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    buildToolsVersion "25.0.0"
     defaultConfig {
         applicationId "com.sunshine.view.helloloader"
-        minSdkVersion 11
+        minSdkVersion 14
         targetSdkVersion 24
         versionCode 1
         versionName "1.0"
@@ -28,7 +28,9 @@ dependencies {
     compile 'com.squareup.okio:okio:latest.release'
     compile 'eu.the4thfloor.volley:com.android.volley:2015.05.28'
     compile 'com.commit451:PhotoView:latest.release'
+    compile 'com.github.bumptech.glide:glide:3.8.0@jar'
     compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'com.gengqiquan:refreshlayout:1.1.2'
     testCompile 'junit:junit:4.12'
     compile project(':library')
 }

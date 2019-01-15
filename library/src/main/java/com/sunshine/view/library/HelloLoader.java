@@ -41,18 +41,18 @@ public class HelloLoader {
     String mDiskCachePath;
     LoaderConfigure mDefaultConfigure;//默认的全局图片加载配置
     Downloader mDownloader;//图片下载器
-    LinkedList<TaskInfo> mNetTaskQueue;//网络请求解析队列
-    LinkedList<TaskInfo> mDiskTaskQueue;//硬盘解析队列
-    ExecutorService mNetThreadPool;// 网络请求解析线程池
-    ExecutorService mDiskThreadPool;// 硬盘解析线程池
+    static  LinkedList<TaskInfo> mNetTaskQueue;//网络请求解析队列
+    static LinkedList<TaskInfo> mDiskTaskQueue;//硬盘解析队列
+    static ExecutorService mNetThreadPool;// 网络请求解析线程池
+    static  ExecutorService mDiskThreadPool;// 硬盘解析线程池
     int threadCount = 4;
-    Handler mPoolThreadHandler;//线程池循环句柄
-    Thread mPoolThread;//后台任务调度线程
+    static Handler mPoolThreadHandler;//线程池循环句柄
+    static Thread mPoolThread;//后台任务调度线程
     Type mType = Type.LIFO;//请求加载顺序：正序还是倒序
     static final int LOAD_FROM_NETWORK = 1;
     static final int LOAD_FROM_DISK = 2;
     boolean mAllowDiskThreadPool;
-int count=0;
+    int count = 0;
     //主线程设置图片句柄
     @SuppressLint("HandlerLeak")
     private Handler UIHandler = new Handler() {
@@ -143,6 +143,7 @@ int count=0;
      */
     private void initBackThread() {
         mPoolThread = new Thread() {
+            @SuppressLint("HandlerLeak")
             @Override
             public void run() {
                 Looper.prepare();
@@ -150,6 +151,9 @@ int count=0;
                     @Override
                     public void handleMessage(Message msg) {
                         // 线程池去取出一个任务进行执行
+                        if (isPause) {
+                            return;
+                        }
                         Runnable runnable;
                         Type type = (Type) msg.obj;
                         switch (msg.what) {
@@ -157,7 +161,7 @@ int count=0;
                                 runnable = getNetTask(type);
                                 if (runnable != null) {
                                     mNetThreadPool.execute(runnable);
-                                }else {
+                                } else {
                                     try {
                                         Thread.sleep(1000);
                                     } catch (InterruptedException e) {
@@ -170,7 +174,7 @@ int count=0;
                                 runnable = getDiskTask(type);
                                 if (runnable != null) {
                                     mDiskThreadPool.execute(runnable);
-                                }else {
+                                } else {
                                     try {
                                         Thread.sleep(1000);
                                     } catch (InterruptedException e) {
@@ -189,6 +193,22 @@ int count=0;
         };
 
         mPoolThread.start();
+    }
+
+    static boolean isPause = false;
+
+    public static void pauseLoader() {
+        isPause = true;
+    }
+
+    public static void resumeLoader() {
+        isPause = false;
+        Message message = mPoolThreadHandler.obtainMessage();
+        message.what = LOAD_FROM_DISK;
+        mPoolThreadHandler.sendMessage(message);
+        Message message2 = mPoolThreadHandler.obtainMessage();
+        message2.what = LOAD_FROM_NETWORK;
+        mPoolThreadHandler.sendMessage(message2);
     }
 
     protected void runTask(LoadedFrom loadedFrom, Type type) {
@@ -260,8 +280,8 @@ int count=0;
         final String key = Utils.md5(uri);
         //加时间戳，防止列表加载的时候有相同路径的多张图片重复加载错乱问题
         //会导致Gridview偶尔第一张图片加载失败
-       // final String tag = key + System.currentTimeMillis();
-        final String tag = key ;
+        // final String tag = key + System.currentTimeMillis();
+        final String tag = key;
         Bitmap bm = null;
         if (configure.memoryCache) {
             bm = memoryCacheCheck(key);
